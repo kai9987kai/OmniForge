@@ -1,0 +1,18 @@
+project "OmniForgeBootstrap" {
+  metric npu_probes = npu_probe_count();
+  metric npu_profiles = npu_profile_count();
+  metric windows_ops = win_op_count();
+  metric screen_w = get(win_screen_size(), "width", 0);
+  metric screen_h = get(win_screen_size(), "height", 0);
+  metric foreground_title = get(win_foreground_window(), "title", "");
+
+  pipeline bootstrap {
+    step npu_probe_json("out/omniforge_npu_probe.json");
+    step npu_runtime_export_json("out/omniforge_npu_runtime.json");
+    step win_windows_json("out/omniforge_windows.json", 10);
+    step write_text("out/omniforge_note.txt", "OmniForge bootstrap completed.");
+    step export_json("out/omniforge_bootstrap_snapshot.json");
+    step summary();
+  }
+}
+

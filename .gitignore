@@ -1,0 +1,8 @@
+out/
+workflows/generated/
+__pycache__/
+omniforge_ai/__pycache__/
+omniforge_ai/adapters/__pycache__/
+*.pyc
+*_omniforge_agent_api_stdout.log
+*_omniforge_agent_api_stderr.log

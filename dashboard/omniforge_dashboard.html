@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OmniForge AI Workbench</title>
+  <style>
+    /* Single-file dashboard inspired by the single-file-lab-studio pattern */
+    :root {
+      --bg0: #08111a;
+      --bg1: #102437;
+      --bg2: #15344b;
+      --panel: rgba(8, 18, 28, 0.78);
+      --panel-2: rgba(12, 28, 43, 0.88);
+      --line: rgba(123, 171, 198, 0.28);
+      --text: #eaf7ff;
+      --muted: #9ebfd1;
+      --accent: #16d2a8;
+      --accent-2: #f0b34c;
+      --accent-3: #64b6ff;
+      --danger: #ff6b6b;
+      --success: #2de4aa;
+      --shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+      --radius: 16px;
+      --radius-sm: 12px;
+      --mono: "Cascadia Code", "Consolas", "Courier New", monospace;
+      --ui: "Bahnschrift", "Trebuchet MS", "Segoe UI Variable Display", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; min-height: 100%; }
+    body {
+      color: var(--text);
+      font-family: var(--ui);
+      background:
+        radial-gradient(1200px 700px at 8% 8%, rgba(22, 210, 168, 0.18), transparent 60%),
+        radial-gradient(900px 700px at 92% 12%, rgba(240, 179, 76, 0.14), transparent 58%),
+        linear-gradient(180deg, var(--bg2), var(--bg0));
+      letter-spacing: 0.01em;
+    }
+
+    .shell {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(8, 18, 28, 0.82), rgba(8, 18, 28, 0.54));
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) + 6px);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -8% -35% auto;
+      width: 420px;
+      height: 220px;
+      background: radial-gradient(circle at 20% 20%, rgba(100, 182, 255, 0.28), transparent 60%);
+      pointer-events: none;
+    }
+
+    .title {
+      font-size: clamp(1.4rem, 3vw, 2.4rem);
+      line-height: 1.02;
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .title .a { color: var(--accent); }
+    .title .b { color: var(--accent-2); }
+
+    .tag {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 70ch;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .badge {
+      border: 1px solid var(--line);
+      background: rgba(11, 24, 35, 0.75);
+      border-radius: 999px;
+      padding: 5px 10px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .hero-actions {
+      display: grid;
+      align-content: start;
+      gap: 10px;
+    }
+
+    .hero-actions .panel {
+      min-height: 140px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #d4ebfb;
+    }
+
+    .panel-body {
+      padding: 12px 14px 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .row-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    label {
+      font-size: 0.76rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    input, select, textarea, button {
+      font: inherit;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid rgba(146, 194, 220, 0.2);
+      background: rgba(7, 16, 24, 0.75);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 9px 10px;
+    }
+
+    textarea {
+      min-height: 84px;
+      resize: vertical;
+      font-family: var(--mono);
+      line-height: 1.35;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(22, 210, 168, 0.65);
+      box-shadow: 0 0 0 3px rgba(22, 210, 168, 0.12);
+    }
+
+    .btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      border: 1px solid rgba(146, 194, 220, 0.22);
+      background: rgba(12, 32, 47, 0.8);
+      color: var(--text);
+      padding: 8px 11px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(22, 210, 168, 0.4);
+      background: rgba(13, 40, 57, 0.95);
+    }
+
+    button.primary {
+      background: linear-gradient(135deg, rgba(22, 210, 168, 0.24), rgba(10, 88, 73, 0.92));
+      border-color: rgba(22, 210, 168, 0.4);
+    }
+
+    button.warn {
+      background: linear-gradient(135deg, rgba(240, 179, 76, 0.18), rgba(98, 70, 18, 0.92));
+      border-color: rgba(240, 179, 76, 0.35);
+    }
+
+    .console {
+      font-family: var(--mono);
+      background: rgba(6, 13, 20, 0.92);
+      border: 1px solid rgba(146, 194, 220, 0.14);
+      border-radius: 12px;
+      padding: 10px;
+      min-height: 160px;
+      white-space: pre-wrap;
+      overflow: auto;
+      line-height: 1.32;
+      font-size: 0.83rem;
+      color: #d8f2ff;
+    }
+
+    .console.small {
+      min-height: 90px;
+      max-height: 180px;
+    }
+
+    .statusline {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .chat-log {
+      display: grid;
+      gap: 8px;
+      max-height: 310px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .msg {
+      border: 1px solid rgba(146, 194, 220, 0.14);
+      border-radius: 12px;
+      background: rgba(8, 16, 24, 0.85);
+      padding: 8px 10px;
+      font-size: 0.9rem;
+      line-height: 1.32;
+      white-space: pre-wrap;
+    }
+
+    .msg.user {
+      border-color: rgba(100, 182, 255, 0.25);
+      background: rgba(8, 20, 35, 0.88);
+    }
+
+    .msg.bot {
+      border-color: rgba(22, 210, 168, 0.22);
+    }
+
+    .msg .who {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 4px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 4px 9px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: rgba(0, 0, 0, 0.14);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #5b7483;
+      box-shadow: 0 0 12px rgba(91, 116, 131, 0.7);
+    }
+
+    .dot.ok { background: var(--success); box-shadow: 0 0 12px rgba(45, 228, 170, 0.7); }
+    .dot.err { background: var(--danger); box-shadow: 0 0 12px rgba(255, 107, 107, 0.7); }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 6px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .flash {
+      animation: fadeUp 220ms ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1200px) {
+      .hero { grid-template-columns: 1fr; }
+      .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 12; }
+    }
+
+    @media (max-width: 760px) {
+      .row, .row-3 { grid-template-columns: 1fr; }
+      .shell { padding: 10px; }
+      .panel-body { padding: 10px; }
+      .panel-head { padding: 10px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <h1 class="title"><span class="a">OmniForge</span> <span class="b">AI Workbench</span></h1>
+        <div class="tag">
+          A local fusion stack combining Supermix chat, NeuroDSL tooling, NexusFlow workflows, npu_easy + ONNX vision inference, and Windhawk integration hooks.
+        </div>
+        <div class="badges">
+          <span class="badge">Supermix_27 runtime</span>
+          <span class="badge">NeuroDSL CLI bridge</span>
+          <span class="badge">NexusFlow DSL</span>
+          <span class="badge">DirectML vision path</span>
+          <span class="badge">Windhawk hotkey mod</span>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <section class="panel">
+          <div class="panel-head">
+            <h2>System Pulse</h2>
+            <span id="pulsePill" class="pill"><span class="dot" id="pulseDot"></span><span id="pulseText">Not Loaded</span></span>
+          </div>
+          <div class="panel-body">
+            <div class="btns">
+              <button class="primary" id="refreshStatusBtn">Refresh Status</button>
+              <button id="loadChatBtn">Load Supermix Chat</button>
+              <button class="warn" id="visionBenchBtn">Vision Benchmark</button>
+            </div>
+            <div class="statusline" id="heroStatusLine">Waiting for status...</div>
+            <div id="heroKv" class="kv"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="grid">
+      <section class="panel span-7">
+        <div class="panel-head">
+          <h2>Supermix Chat</h2>
+          <span class="pill"><span class="dot" id="chatDot"></span><span id="chatState">cold</span></span>
+        </div>
+        <div class="panel-body">
+          <div id="chatLog" class="chat-log"></div>
+          <div class="row">
+            <div>
+              <label for="chatSession">Session</label>
+              <input id="chatSession" value="dashboard" />
+            </div>
+            <div>
+              <label for="chatQuick">Quick Prompt</label>
+              <select id="chatQuick">
+                <option value="">(none)</option>
+                <option value="hello">hello</option>
+                <option value="give me a debugging plan for a python API error">debugging plan</option>
+                <option value="explain tradeoffs of cpu vs npu inference">inference tradeoffs</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label for="chatInput">Message</label>
+            <textarea id="chatInput" placeholder="Type a prompt for the local Supermix model..."></textarea>
+          </div>
+          <div class="btns">
+            <button class="primary" id="chatSendBtn">Send</button>
+            <button id="chatClearBtn">Clear Log</button>
+          </div>
+          <div id="chatMeta" class="console small"></div>
+        </div>
+      </section>
+
+      <section class="panel span-5">
+        <div class="panel-head">
+          <h2>Vision (npu_easy + ONNX)</h2>
+          <span class="pill"><span class="dot" id="visionDot"></span><span id="visionState">idle</span></span>
+        </div>
+        <div class="panel-body">
+          <div>
+            <label for="visionFile">Upload Image</label>
+            <input id="visionFile" type="file" accept="image/*" />
+          </div>
+          <div class="row">
+            <div>
+              <label for="visionTopK">Top K</label>
+              <input id="visionTopK" type="number" min="1" max="10" value="3" />
+            </div>
+            <div style="display:grid; align-content:end;">
+              <button class="primary" id="visionClassifyBtn">Classify Upload</button>
+            </div>
+          </div>
+          <div>
+            <label for="visionPath">Or Local Image Path</label>
+            <input id="visionPath" placeholder="C:\path\to\image.jpg" />
+          </div>
+          <div class="btns">
+            <button id="visionClassifyPathBtn">Classify Path</button>
+            <button id="visionStatusBtn">Vision Status</button>
+          </div>
+          <div id="visionOut" class="console"></div>
+        </div>
+      </section>
+
+      <section class="panel span-6">
+        <div class="panel-head">
+          <h2>NeuroDSL Bridge</h2>
+          <span class="pill"><span class="dot" id="neuroDot"></span><span id="neuroState">ready</span></span>
+        </div>
+        <div class="panel-body">
+          <div class="btns">
+            <button class="primary" id="neuroDevicesBtn">Devices</button>
+            <button id="neuroManifestBtn">Agent Manifest</button>
+            <button id="neuroHealthBtn">Platform Health</button>
+          </div>
+          <div id="neuroOut" class="console small"></div>
+          <div class="row-3">
+            <div>
+              <label for="neuroAgentHost">Agent API Host</label>
+              <input id="neuroAgentHost" value="127.0.0.1" />
+            </div>
+            <div>
+              <label for="neuroAgentPort">Agent API Port</label>
+              <input id="neuroAgentPort" type="number" value="8860" />
+            </div>
+            <div>
+              <label for="neuroAgentDevice">Agent API Device</label>
+              <input id="neuroAgentDevice" value="auto" />
+            </div>
+          </div>
+          <div class="btns">
+            <button class="primary" id="neuroAgentStartBtn">Start Agent API</button>
+            <button id="neuroAgentStatusBtn">Agent API Status</button>
+            <button id="neuroAgentHealthBtn">Agent API Health</button>
+            <button id="neuroAgentManifestBtn">Agent API Manifest</button>
+            <button class="warn" id="neuroAgentStopBtn">Stop Agent API</button>
+          </div>
+          <div id="neuroAgentOut" class="console"></div>
+        </div>
+      </section>
+
+      <section class="panel span-6">
+        <div class="panel-head">
+          <h2>NexusFlow Runner</h2>
+          <span class="pill"><span class="dot" id="nexusDot"></span><span id="nexusState">ready</span></span>
+        </div>
+        <div class="panel-body">
+          <div class="row-3">
+            <div>
+              <label for="nexusExample">Example</label>
+              <select id="nexusExample">
+                <option>npu_workflow_demo.nxf</option>
+                <option>windows_automation_dryrun.nxf</option>
+                <option>eco_ai_web.nxf</option>
+              </select>
+            </div>
+            <div>
+              <label for="nexusPipeline">Pipeline (optional)</label>
+              <input id="nexusPipeline" placeholder="build / check / main" />
+            </div>
+            <div>
+              <label for="nexusOutDir">Out Dir (optional)</label>
+              <input id="nexusOutDir" placeholder="out/omniforge_nexus" />
+            </div>
+          </div>
+          <div class="btns">
+            <button class="primary" id="nexusRunExampleBtn">Run Example</button>
+            <button id="bootstrapWorkflowBtn">Show OmniForge Workflow</button>
+          </div>
+          <div id="nexusOut" class="console"></div>
+        </div>
+      </section>
+
+      <section class="panel span-12">
+        <div class="panel-head">
+          <h2>Agentic Router + NexusFlow Export</h2>
+          <span class="pill"><span class="dot" id="agenticDot"></span><span id="agenticState">ready</span></span>
+        </div>
+        <div class="panel-body">
+          <div class="row">
+            <div>
+              <label for="agenticTask">Task</label>
+              <textarea id="agenticTask" placeholder="Describe what you want the local stack to do (chat, vision, NeuroDSL, NexusFlow, or mixed)."></textarea>
+            </div>
+            <div>
+              <label for="agenticImagePath">Optional Local Image Path</label>
+              <input id="agenticImagePath" placeholder="C:\path\to\image.jpg" />
+              <div class="btns" style="margin-top:10px;">
+                <button class="primary" id="agenticPlanBtn">Plan</button>
+                <button id="agenticExecuteBtn">Execute</button>
+                <button id="agenticExportNxfBtn">Export NexusFlow</button>
+                <button class="warn" id="agenticRunNxfBtn">Run NexusFlow Plan</button>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label for="agenticPlanOut">Plan / Execution Result</label>
+              <div id="agenticOut" class="console"></div>
+            </div>
+            <div>
+              <label for="agenticNxfOut">Generated NexusFlow / Run Result</label>
+              <div id="agenticNxfOut" class="console"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel span-6">
+        <div class="panel-head">
+          <h2>Windhawk Integration</h2>
+          <span class="pill"><span class="dot" id="windDot"></span><span id="windState">ready</span></span>
+        </div>
+        <div class="panel-body">
+          <div class="row">
+            <div>
+              <label for="windHost">Dashboard Host</label>
+              <input id="windHost" value="127.0.0.1" />
+            </div>
+            <div>
+              <label for="windPort">Dashboard Port</label>
+              <input id="windPort" type="number" value="8787" />
+            </div>
+          </div>
+          <div class="btns">
+            <button class="primary" id="windGenBtn">Generate Hotkey Mod</button>
+            <button id="windRestartBtn">Restart Windhawk (Tray)</button>
+          </div>
+          <div id="windOut" class="console"></div>
+        </div>
+      </section>
+
+      <section class="panel span-6">
+        <div class="panel-head">
+          <h2>Full Status JSON</h2>
+          <span class="statusline" id="statusTs">never</span>
+        </div>
+        <div class="panel-body">
+          <div id="statusOut" class="console"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const state = {
+      lastStatus: null,
+      agenticPlan: null,
+    };
+
+    function pretty(x) {
+      if (typeof x === "string") return x;
+      try { return JSON.stringify(x, null, 2); } catch (e) { return String(x); }
+    }
+
+    function nowStamp() {
+      const d = new Date();
+      return d.toLocaleTimeString();
+    }
+
+    function setDot(prefix, mode, text) {
+      const dot = $(prefix + "Dot");
+      const label = $(prefix + "State");
+      if (dot) dot.className = "dot " + (mode || "");
+      if (label && text != null) label.textContent = text;
+    }
+
+    function setPulse(ok, text) {
+      $("pulseDot").className = "dot " + (ok ? "ok" : "err");
+      $("pulseText").textContent = text;
+    }
+
+    async function api(path, opts = {}) {
+      const res = await fetch(path, opts);
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = { ok: false, error: "Non-JSON response" };
+      }
+      if (!res.ok && data && data.error) throw new Error(data.error);
+      if (data && data.ok === false) throw new Error(data.error || "Request failed");
+      return data;
+    }
+
+    function renderChatMsg(kind, text) {
+      const box = $("chatLog");
+      const d = document.createElement("div");
+      d.className = "msg " + kind + " flash";
+      d.innerHTML = `<div class="who">${kind === "user" ? "User" : "Supermix"}</div>`;
+      const body = document.createElement("div");
+      body.textContent = text;
+      d.appendChild(body);
+      box.appendChild(d);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function updateHero(status) {
+      const chat = status.chat || {};
+      const vision = status.vision || {};
+      $("heroStatusLine").textContent = `chat_loaded=${!!chat.loaded} | vision_loaded=${!!vision.loaded} | ${nowStamp()}`;
+      const kv = $("heroKv");
+      kv.innerHTML = "";
+      const rows = [
+        ["Chat Device", (chat.device_info && chat.device_info.resolved) || chat.device || "unknown"],
+        ["Vision Providers", (vision.onnxruntime_providers || []).join(", ") || "unknown"],
+        ["Windhawk", status.windhawk && status.windhawk.installed ? "installed" : "missing"],
+        ["NexusFlow Examples", String((status.nexusflow && status.nexusflow.examples || []).length)],
+      ];
+      for (const [k, v] of rows) {
+        const kEl = document.createElement("div");
+        const vEl = document.createElement("div");
+        kEl.textContent = k;
+        vEl.textContent = v;
+        kv.appendChild(kEl);
+        kv.appendChild(vEl);
+      }
+      setPulse(true, "Online");
+      setDot("chat", chat.loaded ? "ok" : "", chat.loaded ? "loaded" : "cold");
+      setDot("vision", vision.loaded ? "ok" : "", vision.loaded ? "ready" : "idle");
+      setDot("wind", status.windhawk && status.windhawk.installed ? "ok" : "err", status.windhawk && status.windhawk.installed ? "installed" : "missing");
+      setDot("neuro", "ok", "ready");
+      setDot("nexus", "ok", "ready");
+    }
+
+    async function refreshStatus() {
+      try {
+        const data = await api("/api/status");
+        state.lastStatus = data.status;
+        $("statusOut").textContent = pretty(data.status);
+        $("statusTs").textContent = nowStamp();
+        updateHero(data.status);
+      } catch (e) {
+        $("statusOut").textContent = "Status error: " + e.message;
+        setPulse(false, "Status Error");
+      }
+    }
+
+    async function loadChat() {
+      $("chatMeta").textContent = "Loading Supermix checkpoint...";
+      try {
+        const data = await api("/api/chat/load", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
+        $("chatMeta").textContent = pretty(data);
+        setDot("chat", "ok", "loaded");
+        await refreshStatus();
+      } catch (e) {
+        $("chatMeta").textContent = "Load error: " + e.message;
+        setDot("chat", "err", "error");
+      }
+    }
+
+    async function sendChat() {
+      const quick = $("chatQuick").value.trim();
+      const area = $("chatInput");
+      const session = $("chatSession").value.trim() || "dashboard";
+      if (!area.value.trim() && quick) area.value = quick;
+      const message = area.value.trim();
+      if (!message) return;
+      renderChatMsg("user", message);
+      area.value = "";
+      $("chatMeta").textContent = "Running local inference...";
+      try {
+        const data = await api("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, session_id: session }),
+        });
+        renderChatMsg("bot", data.response || "(no response)");
+        $("chatMeta").textContent = pretty({
+          style_mode: data.style_mode,
+          timing_ms: data.timing_ms,
+          top_candidates: data.top_candidates ? data.top_candidates.slice(0, 3) : [],
+        });
+        setDot("chat", "ok", "loaded");
+      } catch (e) {
+        renderChatMsg("bot", "Error: " + e.message);
+        $("chatMeta").textContent = "Chat error: " + e.message;
+        setDot("chat", "err", "error");
+      }
+    }
+
+    async function classifyUpload() {
+      const fileInput = $("visionFile");
+      const topK = parseInt($("visionTopK").value || "3", 10);
+      const out = $("visionOut");
+      if (!fileInput.files || !fileInput.files.length) {
+        out.textContent = "Choose an image first.";
+        return;
+      }
+      const form = new FormData();
+      form.append("file", fileInput.files[0]);
+      form.append("top_k", String(topK));
+      out.textContent = "Running ONNX inference...";
+      try {
+        const res = await fetch("/api/vision/classify", { method: "POST", body: form });
+        const data = await res.json();
+        if (!res.ok || data.ok === false) throw new Error(data.error || "Vision classify failed");
+        out.textContent = pretty(data);
+        setDot("vision", "ok", "classified");
+      } catch (e) {
+        out.textContent = "Vision error: " + e.message;
+        setDot("vision", "err", "error");
+      }
+    }
+
+    async function classifyPath() {
+      const imagePath = $("visionPath").value.trim();
+      const topK = parseInt($("visionTopK").value || "3", 10);
+      const out = $("visionOut");
+      if (!imagePath) {
+        out.textContent = "Provide a local image path.";
+        return;
+      }
+      out.textContent = "Running ONNX inference on local path...";
+      try {
+        const data = await api("/api/vision/classify-path", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image_path: imagePath, top_k: topK }),
+        });
+        out.textContent = pretty(data);
+        setDot("vision", "ok", "classified");
+      } catch (e) {
+        out.textContent = "Vision path error: " + e.message;
+        setDot("vision", "err", "error");
+      }
+    }
+
+    async function visionStatusOrBench(path) {
+      const out = $("visionOut");
+      out.textContent = "Working...";
+      try {
+        const data = await api(path);
+        out.textContent = pretty(data);
+        setDot("vision", "ok", path.includes("benchmark") ? "benchmarked" : "ready");
+      } catch (e) {
+        out.textContent = "Vision request error: " + e.message;
+        setDot("vision", "err", "error");
+      }
+    }
+
+    async function loadNeuro(path) {
+      const out = $("neuroOut");
+      out.textContent = "Running NeuroDSL command...";
+      try {
+        const data = await api(path);
+        out.textContent = pretty(data.summary || data.json || data.parsed || data);
+        setDot("neuro", data.ok ? "ok" : "err", data.ok ? "done" : "error");
+      } catch (e) {
+        out.textContent = "NeuroDSL error: " + e.message;
+        setDot("neuro", "err", "error");
+      }
+    }
+
+    async function neuroAgentCall(path, body = null) {
+      const out = $("neuroAgentOut");
+      out.textContent = "Talking to NeuroDSL agent API manager...";
+      try {
+        const opts = body == null
+          ? { method: "GET" }
+          : {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            };
+        const data = await api(path, opts);
+        out.textContent = pretty(data);
+        if (typeof data.running === "boolean") {
+          setDot("neuro", data.running ? "ok" : "", data.running ? "agent up" : "ready");
+        } else {
+          setDot("neuro", "ok", "agent call");
+        }
+      } catch (e) {
+        out.textContent = "NeuroDSL agent API error: " + e.message;
+        setDot("neuro", "err", "agent err");
+      }
+    }
+
+    function agenticPayload() {
+      return {
+        task: $("agenticTask").value.trim(),
+        image_path: $("agenticImagePath").value.trim() || null,
+        session_id: "dashboard-agentic",
+      };
+    }
+
+    async function agenticPlan() {
+      const out = $("agenticOut");
+      out.textContent = "Planning...";
+      try {
+        const data = await api("/api/agentic/plan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(agenticPayload()),
+        });
+        state.agenticPlan = data;
+        out.textContent = pretty(data);
+        setDot("agentic", "ok", "planned");
+      } catch (e) {
+        out.textContent = "Agentic plan error: " + e.message;
+        setDot("agentic", "err", "error");
+      }
+    }
+
+    async function agenticExecute() {
+      const out = $("agenticOut");
+      out.textContent = "Executing plan...";
+      try {
+        const payload = state.agenticPlan ? { plan: state.agenticPlan } : agenticPayload();
+        const data = await api("/api/agentic/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (data.plan) state.agenticPlan = data.plan;
+        out.textContent = pretty(data);
+        setDot("agentic", "ok", "executed");
+      } catch (e) {
+        out.textContent = "Agentic execute error: " + e.message;
+        setDot("agentic", "err", "error");
+      }
+    }
+
+    async function agenticExportNxf() {
+      const out = $("agenticNxfOut");
+      out.textContent = "Exporting NexusFlow pipeline...";
+      try {
+        const payload = state.agenticPlan ? { plan: state.agenticPlan } : agenticPayload();
+        const data = await api("/api/agentic/nexusflow-export", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        out.textContent = pretty({
+          plan_id: data.plan_id,
+          file_path: data.file_path,
+          pipeline: data.pipeline,
+          text_preview: (data.text || "").slice(0, 2000),
+        });
+        setDot("agentic", "ok", "nxf exported");
+      } catch (e) {
+        out.textContent = "Agentic export error: " + e.message;
+        setDot("agentic", "err", "error");
+      }
+    }
+
+    async function agenticRunNxf() {
+      const out = $("agenticNxfOut");
+      out.textContent = "Running generated NexusFlow pipeline...";
+      try {
+        const payload = state.agenticPlan ? { plan: state.agenticPlan } : agenticPayload();
+        const data = await api("/api/agentic/nexusflow-run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        out.textContent = pretty({
+          export: data.export,
+          nexusflow_summary: data.nexusflow_run && (data.nexusflow_run.summary || {
+            ok: data.nexusflow_run.ok,
+            returncode: data.nexusflow_run.returncode,
+          }),
+        });
+        setDot("agentic", "ok", "nxf ran");
+      } catch (e) {
+        out.textContent = "Agentic NexusFlow run error: " + e.message;
+        setDot("agentic", "err", "error");
+      }
+    }
+
+    async function runNexusExample() {
+      const example = $("nexusExample").value;
+      const pipeline = $("nexusPipeline").value.trim();
+      const outDir = $("nexusOutDir").value.trim();
+      const out = $("nexusOut");
+      out.textContent = "Running NexusFlow example...";
+      try {
+        const data = await api("/api/nexusflow/run-example", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            example,
+            pipeline: pipeline || null,
+            out_dir: outDir || null
+          }),
+        });
+        out.textContent = pretty(data.summary || data.json || data.parsed || data);
+        setDot("nexus", data.ok ? "ok" : "err", data.ok ? "done" : "error");
+      } catch (e) {
+        out.textContent = "NexusFlow error: " + e.message;
+        setDot("nexus", "err", "error");
+      }
+    }
+
+    async function showBootstrapWorkflow() {
+      const out = $("nexusOut");
+      out.textContent = "Loading OmniForge bootstrap workflow...";
+      try {
+        const data = await api("/api/workflows/bootstrap");
+        out.textContent = data.text || "";
+      } catch (e) {
+        out.textContent = "Workflow error: " + e.message;
+      }
+    }
+
+    async function windhawkGenerate() {
+      const out = $("windOut");
+      const host = $("windHost").value.trim() || "127.0.0.1";
+      const port = parseInt($("windPort").value || "8787", 10);
+      out.textContent = "Generating Windhawk mod...";
+      try {
+        const data = await api("/api/windhawk/generate-mod", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ host, port, path: "/", copy_to_windhawk: true }),
+        });
+        out.textContent = pretty(data);
+        setDot("wind", "ok", "mod generated");
+      } catch (e) {
+        out.textContent = "Windhawk mod error: " + e.message;
+        setDot("wind", "err", "error");
+      }
+    }
+
+    async function windhawkRestart() {
+      const out = $("windOut");
+      out.textContent = "Restarting Windhawk...";
+      try {
+        const data = await api("/api/windhawk/restart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tray_only: true }),
+        });
+        out.textContent = pretty(data);
+        setDot("wind", data.ok ? "ok" : "err", data.ok ? "restarted" : "restart failed");
+      } catch (e) {
+        out.textContent = "Windhawk restart error: " + e.message;
+        setDot("wind", "err", "error");
+      }
+    }
+
+    function bind() {
+      $("refreshStatusBtn").addEventListener("click", refreshStatus);
+      $("loadChatBtn").addEventListener("click", loadChat);
+      $("visionBenchBtn").addEventListener("click", () => visionStatusOrBench("/api/vision/benchmark"));
+
+      $("chatSendBtn").addEventListener("click", sendChat);
+      $("chatClearBtn").addEventListener("click", () => {
+        $("chatLog").innerHTML = "";
+        $("chatMeta").textContent = "";
+      });
+      $("chatQuick").addEventListener("change", (e) => {
+        if (e.target.value) $("chatInput").value = e.target.value;
+      });
+      $("chatInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendChat();
+        }
+      });
+
+      $("visionClassifyBtn").addEventListener("click", classifyUpload);
+      $("visionClassifyPathBtn").addEventListener("click", classifyPath);
+      $("visionStatusBtn").addEventListener("click", () => visionStatusOrBench("/api/vision/status"));
+
+      $("neuroDevicesBtn").addEventListener("click", () => loadNeuro("/api/neurodsl/devices"));
+      $("neuroManifestBtn").addEventListener("click", () => loadNeuro("/api/neurodsl/agent-manifest"));
+      $("neuroHealthBtn").addEventListener("click", () => loadNeuro("/api/neurodsl/platform-health"));
+      $("neuroAgentStartBtn").addEventListener("click", () => neuroAgentCall("/api/neurodsl/agent-api/start", {
+        host: $("neuroAgentHost").value.trim() || "127.0.0.1",
+        port: parseInt($("neuroAgentPort").value || "8860", 10),
+        device: $("neuroAgentDevice").value.trim() || "auto",
+      }));
+      $("neuroAgentStatusBtn").addEventListener("click", () => neuroAgentCall("/api/neurodsl/agent-api/status"));
+      $("neuroAgentHealthBtn").addEventListener("click", () => neuroAgentCall("/api/neurodsl/agent-api/health"));
+      $("neuroAgentManifestBtn").addEventListener("click", () => neuroAgentCall("/api/neurodsl/agent-api/manifest"));
+      $("neuroAgentStopBtn").addEventListener("click", () => neuroAgentCall("/api/neurodsl/agent-api/stop", {}));
+
+      $("nexusRunExampleBtn").addEventListener("click", runNexusExample);
+      $("bootstrapWorkflowBtn").addEventListener("click", showBootstrapWorkflow);
+      $("agenticPlanBtn").addEventListener("click", agenticPlan);
+      $("agenticExecuteBtn").addEventListener("click", agenticExecute);
+      $("agenticExportNxfBtn").addEventListener("click", agenticExportNxf);
+      $("agenticRunNxfBtn").addEventListener("click", agenticRunNxf);
+
+      $("windGenBtn").addEventListener("click", windhawkGenerate);
+      $("windRestartBtn").addEventListener("click", windhawkRestart);
+    }
+
+    bind();
+    refreshStatus();
+    showBootstrapWorkflow();
+    $("chatMeta").textContent = "Chat engine is lazy-loaded. Click 'Load Supermix Chat' or send a message.";
+  </script>
+</body>
+</html>
